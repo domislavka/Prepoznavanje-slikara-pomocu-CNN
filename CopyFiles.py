@@ -27,9 +27,9 @@ fileovi = list(walk(train2_dir))[0][2]
 
 def copyImagesToFiles(artist, artistImagesTrain, artistImagesVal, artistImagesTest):
 
-    a_trdir = os.path.join(train_dir, artist)
-    a_vadir = os.path.join(validation_dir, artist)
-    a_tedir = os.path.join(test_dir, artist)
+    a_trdir = path.join(train_dir, artist)
+    a_vadir = path.join(validation_dir, artist)
+    a_tedir = path.join(test_dir, artist)
     
     createFolder(a_trdir)
     createFolder(a_vadir)
