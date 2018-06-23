@@ -33,16 +33,19 @@ def copyImagesToFiles(artist, artistImagesTrain, artistImagesVal, artistImagesTe
     createFolder(a_tedir)
     
     for item in artistImagesTrain.new_filename:
-        source = path.join(train2_dir, item)
-        dest = a_trdir
-        shutil.copy(source, dest)
+        if not path.exists(path.join(a_trdir, item)):
+            source = path.join(train2_dir, item)
+            dest = a_trdir
+            shutil.copy(source, dest)
         
     for item in artistImagesVal.new_filename:
-        source = path.join(train2_dir, item)
-        dest = a_vadir
-        shutil.copy(source, dest)
-        
+        if not path.exists(path.join(a_vadir, item)):
+            source = path.join(train2_dir, item)
+            dest = a_vadir
+            shutil.copy(source, dest)
+            
     for item in artistImagesTest.new_filename:
-        source = path.join(train2_dir, item)
-        dest = a_tedir
-        shutil.copy(source, dest)
+        if not path.exists(path.join(a_tedir, item)):
+            source = path.join(train2_dir, item)
+            dest = a_tedir
+            shutil.copy(source, dest)
