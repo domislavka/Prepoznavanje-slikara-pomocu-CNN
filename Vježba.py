@@ -86,34 +86,34 @@ print('Prepoznajemo ' + str(num_artists) + ' umjetnika')
 
 
 
-train_dfs = []
-val_dfs = []
-test_dfs = []
+#train_dfs = []
+#val_dfs = []
+#test_dfs = []
 
-for a in artists:
+#for a in artists:
     # PROVJERI KASNIJE ŠTA JE S NA=TRUE
-    tmp = df[df['artist'].str.startswith(a)].sample(n=num_samples, random_state=seed)
+#    tmp = df[df['artist'].str.startswith(a)].sample(n=num_samples, random_state=seed)
     # print(tmp.shape)
-    t_df = tmp.sample(n=num_train, random_state=seed)
-    rest_df = tmp.loc[~tmp.index.isin(t_df.index)] # uzmi komplement od t_df
+#    t_df = tmp.sample(n=num_train, random_state=seed)
+#    rest_df = tmp.loc[~tmp.index.isin(t_df.index)] # uzmi komplement od t_df
     # print(rest_df.shape)
-    v_df = rest_df.sample(n=num_val, random_state=seed)
-    te_df = rest_df.loc[~rest_df.index.isin(v_df.index)]
+#    v_df = rest_df.sample(n=num_val, random_state=seed)
+#    te_df = rest_df.loc[~rest_df.index.isin(v_df.index)]
     
-    train_dfs.append(t_df)
-    val_dfs.append(v_df)
-    test_dfs.append(te_df)
+#    train_dfs.append(t_df)
+#    val_dfs.append(v_df)
+#    test_dfs.append(te_df)
     
     # ovo se pokrene samo jednom!!
-    copyImagesToFiles(a, t_df, v_df, te_df)
+#    copyImagesToFiles(a, t_df, v_df, te_df)
 
-train_df = pd.concat(train_dfs)
-val_df = pd.concat(val_dfs)
-test_df = pd.concat(test_dfs)
+#train_df = pd.concat(train_dfs)
+#val_df = pd.concat(val_dfs)
+#test_df = pd.concat(test_dfs)
 
-print('train tablica\t\t', train_df.shape)
-print('validation tablica\t', val_df.shape)
-print('test tablica\t\t', test_df.shape)
+#print('train tablica\t\t', train_df.shape)
+#print('validation tablica\t', val_df.shape)
+#print('test tablica\t\t', test_df.shape)
 
 
 # In[13]:
@@ -180,16 +180,14 @@ validation_generator = val_datagen.flow_from_directory(
                     '../validation',
                     batch_size=b_size,
                     class_mode='categorical')
-validation_generator = val_datagen.standardize(validation_generator)
-
 # na slikama iz validation skupa radimo centralni crop
 val_crops = crop_generator(validation_generator, 224, False)
 
 
 test_generator = test_datagen.flow_from_directory(
                 '../test',
-                target_size=(224, 224),
                 batch_size=b_size)
+test_crops = crop_generator(test_generator, 224, False)
 
 
 # Model mreže
@@ -253,22 +251,23 @@ STEP_SIZE_VALID=validation_generator.n//validation_generator.batch_size
 
 model.fit_generator(train_crops,
                     steps_per_epoch=STEP_SIZE_TRAIN,
-                    epochs=10,
+                    epochs=20,
                     validation_data=val_crops,
                     validation_steps=STEP_SIZE_VALID,
-                    workers=4)
+                    workers=4,
+                    callbacks=[tbCallBack])
 
 
 # In[17]:
 
 
-model.save_weights('prvi_pokusaj300SVE-SLIKE15.h5')
+model.save_weights('pokusaj300-20.h5')
 
 
 # In[18]:
 
 
-evaluation = model.evaluate_generator(test_generator,
+evaluation = model.evaluate_generator(test_crops,
                          steps=test_generator.n//test_generator.batch_size,
                          workers=4,
                          verbose=1)
@@ -280,7 +279,7 @@ print(evaluation)
 # In[19]:
 
 
-predictions = model.predict_generator(test_generator,
+predictions = model.predict_generator(test_crops,
                         steps=test_generator.n//test_generator.batch_size,
                         workers=4,
                         verbose=1)
