@@ -22,7 +22,7 @@ from keras.callbacks import ReduceLROnPlateau
 from keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_array, load_img
 from keras.regularizers import l2
 from keras import backend as K
-from keras.models import Sequential
+from keras.models import Sequential, Model
 from os import path, getcwd
 import pandas as pd
 import random
@@ -89,34 +89,34 @@ print('Prepoznajemo ' + str(num_artists) + ' umjetnika')
 # In[7]:
 
 
-train_dfs = []
-val_dfs = []
-test_dfs = []
+#train_dfs = []
+#val_dfs = []
+#test_dfs = []
 
-for a in artists:
+#for a in artists:
     # PROVJERI KASNIJE ŠTA JE S NA=TRUE
-    tmp = df[df['artist'].str.startswith(a)].sample(n=num_samples, random_state=seed)
+#    tmp = df[df['artist'].str.startswith(a)].sample(n=num_samples, random_state=seed)
     # print(tmp.shape)
-    t_df = tmp.sample(n=num_train, random_state=seed)
-    rest_df = tmp.loc[~tmp.index.isin(t_df.index)] # uzmi komplement od t_df
+#    t_df = tmp.sample(n=num_train, random_state=seed)
+#    rest_df = tmp.loc[~tmp.index.isin(t_df.index)] # uzmi komplement od t_df
     # print(rest_df.shape)
-    v_df = rest_df.sample(n=num_val, random_state=seed)
-    te_df = rest_df.loc[~rest_df.index.isin(v_df.index)]
+#    v_df = rest_df.sample(n=num_val, random_state=seed)
+#    te_df = rest_df.loc[~rest_df.index.isin(v_df.index)]
     
-    train_dfs.append(t_df)
-    val_dfs.append(v_df)
-    test_dfs.append(te_df)
+#    train_dfs.append(t_df)
+#    val_dfs.append(v_df)
+#    test_dfs.append(te_df)
     
     # ovo se pokrene samo jednom!!
-    copyImagesToFiles(a, t_df, v_df, te_df)
+#    copyImagesToFiles(a, t_df, v_df, te_df)
 
-train_df = pd.concat(train_dfs)
-val_df = pd.concat(val_dfs)
-test_df = pd.concat(test_dfs)
+#train_df = pd.concat(train_dfs)
+#val_df = pd.concat(val_dfs)
+#test_df = pd.concat(test_dfs)
 
-print('train tablica\t\t', train_df.shape)
-print('validation tablica\t', val_df.shape)
-print('test tablica\t\t', test_df.shape)
+#print('train tablica\t\t', train_df.shape)
+#print('validation tablica\t', val_df.shape)
+#print('test tablica\t\t', test_df.shape)
 
 
 # In[162]:
@@ -209,108 +209,118 @@ test_crops = crop_generator(test_generator, 224, False, True)
 
 # model mreže inspiriran glavnim člankom
 
-model = Sequential()
+#model = Sequential()
 
-model.add(Conv2D(32, 
-                 kernel_size=3, 
-                 strides=2, 
-                 padding='same', 
-                 input_shape=input_shape,
-                 kernel_initializer=glorot_normal()))
-model.add(Activation('relu'))
-model.add(BatchNormalization())
-model.add(MaxPooling2D(pool_size=2))
-model.add(Conv2D(32, 
-                 kernel_size=3, 
-                 strides=2, 
-                 padding="same", 
-                 input_shape=input_shape,
-                 kernel_initializer=glorot_normal()))
-model.add(Activation('relu'))
-model.add(BatchNormalization())
-model.add(MaxPooling2D(pool_size=2))
-model.add(Flatten())
-model.add(Dense(4*num_artists, 
-                input_shape=(6272,),
-                kernel_initializer=glorot_normal()))
-model.add(Activation('relu'))
-model.add(Dense(num_artists, 
-                input_shape=(4*num_artists,),
-                activation='softmax',
-                kernel_initializer=glorot_normal()))
+#model.add(Conv2D(32, 
+#                 kernel_size=3, 
+#                 strides=2, 
+#                 padding='same', 
+#                 input_shape=input_shape,
+#                 kernel_initializer=glorot_normal()))
+#model.add(Activation('relu'))
+#model.add(BatchNormalization())
+#model.add(MaxPooling2D(pool_size=2))
+#model.add(Conv2D(32, 
+#                 kernel_size=3, 
+#                 strides=2, 
+#                 padding="same", 
+#                 input_shape=input_shape,
+#                 kernel_initializer=glorot_normal()))
+#model.add(Activation('relu'))
+#model.add(BatchNormalization())
+#model.add(MaxPooling2D(pool_size=2))
+#model.add(Flatten())
+#model.add(Dense(4*num_artists, 
+#                input_shape=(6272,),
+#                kernel_initializer=glorot_normal()))
+#model.add(Activation('relu'))
+#model.add(Dense(num_artists, 
+#                input_shape=(4*num_artists,),
+#                activation='softmax',
+#                kernel_initializer=glorot_normal()))
 
-tbCallBack = TensorBoard(log_dir='./Graph300-5', 
-                         histogram_freq=0, 
+tbCallBack = TensorBoard(log_dir='./GraphVgg16-3', 
+                         histogram_freq=1, 
                          write_graph=True, 
-                         write_images=True)
+                         write_images=True,
+                         write_grads=False)
+
+mdCheckPoint = ModelCheckpoint(filepath='vgg16.weights.{epoch:02d}--{val_acc:.5f}.hdf5',
+                                monitor='val_acc',
+                                mode='max',
+                                save_best_only=False,
+                                save_weights_only=False,
+                                verbose=1,
+                                period=1)
 
 # koristimo adamov optimizator i metrika je točnost
-model.compile(loss='categorical_crossentropy',
-              optimizer=Adam(lr=1e-4),
-              metrics=['accuracy'])
+#model.compile(loss='categorical_crossentropy',
+#              optimizer=Adam(lr=1e-4),
+#              metrics=['accuracy'])
 
 # crta tablicu slojeva mreže
-model.summary()
+#model.summary()
 
 
 # In[11]:
 
 
-model.load_weights('pokusaj300-20.h5')
+#model.load_weights('pokusaj300-20.h5')
 
 
 # In[ ]:
-
+STEP_SIZE_TRAIN = train_generator.n//train_generator.batch_size
+STEP_SIZE_VALID = validation_generator.n//validation_generator.batch_size
 
 # treniramo mrežu....
-model.fit_generator(train_crops,
-                    steps_per_epoch=STEP_SIZE_TRAIN,
-                    epochs=10,
-                    validation_data=val_crops,
-                    validation_steps=STEP_SIZE_VALID,
-                    workers=4,
-                    callbacks=[tbCallBack])
+#model.fit_generator(train_crops,
+#                    steps_per_epoch=STEP_SIZE_TRAIN,
+#                    epochs=10,
+#                    validation_data=val_crops,
+#                    validation_steps=STEP_SIZE_VALID,
+#                    workers=4,
+#                    callbacks=[tbCallBack])
 
-model.save_weights('prvi_pokusaj300SVE-SLIKE20.h5')
+#model.save_weights('prvi_pokusaj300SVE-SLIKE20.h5')
 
 
 # In[89]:
 
 
-evaluation = model.evaluate_generator(test_crops,
-                         steps=test_generator.n//test_generator.batch_size,
-                         workers=4,
-                         verbose=1)
+#evaluation = model.evaluate_generator(test_crops,
+#                         steps=test_generator.n//test_generator.batch_size,
+#                         workers=4,
+#                         verbose=1)
 
-print(model.metrics_names)
-print(evaluation)
+#print(model.metrics_names)
+#print(evaluation)
 
 
 # In[164]:
 
 
-predictions = model.predict_generator(test_crops, 
-                                      steps=test_generator.n//test_generator.batch_size,
-                                      workers=4,
-                                      verbose=1)
+#predictions = model.predict_generator(test_crops, 
+#                                      steps=test_generator.n//test_generator.batch_size,
+#                                      workers=4,
+#                                      verbose=1)
 
-preds = np.argmax(predictions, axis=-1) #multiple categories
+#preds = np.argmax(predictions, axis=-1) #multiple categories
 
-label_map = (train_generator.class_indices)
-label_map = dict((v,k) for k,v in label_map.items()) #flip k,v
-preds_names = [label_map[k] for k in preds]
+#label_map = (train_generator.class_indices)
+#label_map = dict((v,k) for k,v in label_map.items()) #flip k,v
+#preds_names = [label_map[k] for k in preds]
 
 
 # In[168]:
 
 
-print(sum(preds == test_generator.classes)/len(preds))
+#print(sum(preds == test_generator.classes)/len(preds))
 
 
 # In[180]:
 
 
-print(label_map)
+#print(label_map)
 
 
 # In[184]:
@@ -318,7 +328,7 @@ print(label_map)
 
 # spremimo modelove "pogodtke"
 
-np.save(open('predictions_base_test.npy', 'wb'), predictions)
+#np.save(open('predictions_base_test.npy', 'wb'), predictions)
 
 
 # # mali testovi kako je base model los
@@ -326,74 +336,183 @@ np.save(open('predictions_base_test.npy', 'wb'), predictions)
 # In[182]:
 
 
-from keras.preprocessing import image
+#from keras.preprocessing import image
 
-img_path = 0
-img = image.load_img("/home/ivana/repos/Vje-ba/testPicasso.jpg")
-x = image.img_to_array(img)
+#img_path = 0
+#img = image.load_img("/home/ivana/repos/Vje-ba/testPicasso.jpg")
+#x = image.img_to_array(img)
 
-print(type(img))
-print(img.size)
-img_cropped = center_crop(x, (224, 224))
-img_cropped_blah = image.array_to_img(img_cropped)
-img_cropped_blah.show()
+#print(type(img))
+#print(img.size)
+#img_cropped = center_crop(x, (224, 224))
+#img_cropped_blah = image.array_to_img(img_cropped)
+#img_cropped_blah.show()
 
-x_pred = model.predict_classes(img_cropped.reshape(1, 224, 224, 3), batch_size=1)
-print('Sliku je naslikao: ', label_map[x_pred[0]])
+#x_pred = model.predict_classes(img_cropped.reshape(1, 224, 224, 3), batch_size=1)
+#print('Sliku je naslikao: ', label_map[x_pred[0]])
 
 
 # In[181]:
 
 
-img1 = image.load_img("/home/ivana/repos/Vje-ba/testGogh.jpg")
-x1 = image.img_to_array(img1)
+#img1 = image.load_img("/home/ivana/repos/Vje-ba/testGogh.jpg")
+#x1 = image.img_to_array(img1)
 
-print(type(img1))
-img_cropped1 = center_crop(x1, (224, 224))
-img_cropped_blah1 = image.array_to_img(img_cropped1)
-img_cropped_blah1.show()
+#print(type(img1))
+#img_cropped1 = center_crop(x1, (224, 224))
+#img_cropped_blah1 = image.array_to_img(img_cropped1)
+#img_cropped_blah1.show()
 
-x_pred1 = model.predict_classes(img_cropped1.reshape(1, 224, 224, 3), batch_size=1)
-print('Sliku je naslikao: ', label_map[x_pred1[0]])
+#x_pred1 = model.predict_classes(img_cropped1.reshape(1, 224, 224, 3), batch_size=1)
+#print('Sliku je naslikao: ', label_map[x_pred1[0]])
 
 
 # In[173]:
 
 
-from sklearn.metrics import classification_report, confusion_matrix
+#from sklearn.metrics import classification_report, confusion_matrix
 
-print(confusion_matrix(test_generator.classes, preds))
-print(classification_report(test_generator.classes, preds))
+""" print(confusion_matrix(test_generator.classes, preds))
+print(classification_report(test_generator.classes, preds)) """
 
 
 # In[24]:
 
 
-from keras.applicaeput_tensor=None, 
-                     input_shape=None, 
-                     pooling=None, 
-                     classes=num_artists)
+# we initialize the model
+vgg16 = Sequential()
+
+# Conv Block 1
+vgg16.add(Conv2D(64, (3, 3), input_shape=(224,224,3), activation='relu', padding='same', kernel_initializer=glorot_normal()))
+vgg16.add(Conv2D(64, (3, 3), activation='relu', padding='same', kernel_initializer=glorot_normal()))
+vgg16.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
+
+# Conv Block 2
+vgg16.add(Conv2D(128, (3, 3), activation='relu', padding='same', kernel_initializer=glorot_normal()))
+vgg16.add(Conv2D(128, (3, 3), activation='relu', padding='same', kernel_initializer=glorot_normal()))
+vgg16.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
+
+# Conv Block 3
+vgg16.add(Conv2D(256, (3, 3), activation='relu', padding='same', kernel_initializer=glorot_normal()))
+vgg16.add(Conv2D(256, (3, 3), activation='relu', padding='same',kernel_initializer=glorot_normal()))
+vgg16.add(Conv2D(256, (3, 3), activation='relu', padding='same', kernel_initializer=glorot_normal()))
+vgg16.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
+
+# Conv Block 4
+vgg16.add(Conv2D(512, (3, 3), activation='relu', padding='same', kernel_initializer=glorot_normal()))
+vgg16.add(Conv2D(512, (3, 3), activation='relu', padding='same', kernel_initializer=glorot_normal()))
+vgg16.add(Conv2D(512, (3, 3), activation='relu', padding='same', kernel_initializer=glorot_normal()))
+vgg16.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
+
+# Conv Block 5
+vgg16.add(Conv2D(512, (3, 3), activation='relu', padding='same',kernel_initializer=glorot_normal()))
+vgg16.add(Conv2D(512, (3, 3), activation='relu', padding='same',kernel_initializer=glorot_normal()))
+vgg16.add(Conv2D(512, (3, 3), activation='relu', padding='same',kernel_initializer=glorot_normal()))
+vgg16.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
+
+# FC layers
+vgg16.add(Flatten())
+vgg16.add(Dense(4096, activation='relu', kernel_initializer=glorot_normal()))
+vgg16.add(Dense(4096, activation='relu', kernel_initializer=glorot_normal()))
+vgg16.add(Dense(1000, activation='softmax', kernel_initializer=glorot_normal()))
+
+# vgg16.load_weights('vgg16_weights_tf_dim_ordering_tf_kernels.h5')
+
+x = Dense(num_artists, activation='softmax', kernel_initializer=glorot_normal())(vgg16.layers[-2].output)
+sirovi_vgg16 = Model(vgg16.input, x)
+
+
+# for layer in vgg16.layers: layer.trainable = False
+
+
 sirovi_vgg16.compile(loss='categorical_crossentropy',
-                     optimizer=Adam(lr=1e-4),
+                     optimizer=Adam(lr=1e-3),
                      metrics=['accuracy'])
+
 sirovi_vgg16.summary()
-
-
-# In[ ]:
-
 
 sirovi_vgg16.fit_generator(train_crops,
                     steps_per_epoch=STEP_SIZE_TRAIN,
                     epochs=3,
                     validation_data=val_crops,
                     validation_steps=STEP_SIZE_VALID,
-                    workers=2)
+                    workers = 4)
+
+sirovi_vgg16.save_weights('sirovi_vgg16-13.h5')
+
+""" for layer in sirovi_vgg16.layers[:10]:
+    layer.trainable = False
+for layer in sirovi_vgg16.layers[10:]:
+    layer.trainable = True
+
+sirovi_vgg16.compile(loss='categorical_crossentropy',
+                     optimizer=SGD(lr=10e-5),
+                     metrics=['accuracy'])
+
+sirovi_vgg16.fit_generator(train_crops,
+                    steps_per_epoch=STEP_SIZE_TRAIN,
+                    epochs=3,
+                    validation_data=val_crops,
+                    validation_steps=STEP_SIZE_VALID,
+                    workers=2,
+                    callbacks=[tbCallBack, mdCheckPoint])
+
+sirovi_vgg16.save_weights('sirovi_vgg16-13.h5') """
+
+evaluation_vgg16 = sirovi_vgg16.evaluate_generator(test_crops,
+                         steps=test_generator.n//test_generator.batch_size,
+                         workers=4,
+                         verbose=1)
+
+print(sirovi_vgg16.metrics_names)
+print(evaluation_vgg16)
+
+predictions_vgg16 = sirovi_vgg16.predict_generator(test_crops, 
+                                      steps=test_generator.n//test_generator.batch_size,
+                                      workers=4,
+                                      verbose=1)
+
+preds_vgg16 = np.argmax(predictions_vgg16, axis=-1) #multiple categories
+
+label_map = (train_generator.class_indices)
+label_map = dict((v,k) for k,v in label_map.items()) #flip k,v
+preds_names = [label_map[k] for k in preds_vgg16]
+
+print(sum(preds_vgg16 == test_generator.classes)/len(preds_vgg16))
+
+# spremimo modelove "pogodtke"
+
+np.save(open('predictions_sirovi_vgg16_test.npy', 'wb'), predictions_vgg16)
+
+""" from keras.applications import vgg16
+sirovi_vgg16 = vgg16.VGG16(
+                     input_tensor=None,
+
+                     input_shape=None, 
+                     pooling=None, 
+                     classes=num_artists)
+
+sirovi_vgg16.compile(loss='categorical_crossentropy',
+                     optimizer=Adam(lr=1e-4),
+                     metrics=['accuracy'])
+sirovi_vgg16.summary() """
 
 
 # In[ ]:
 
 
-import keras
+""" sirovi_vgg16.fit_generator(train_crops,
+                    steps_per_epoch=STEP_SIZE_TRAIN,
+                    epochs=3,
+                    validation_data=val_crops,
+                    validation_steps=STEP_SIZE_VALID,
+                    workers=2)
+ """
+
+# In[ ]:
+
+
+""" import keras
 xception = keras.applications.xception.Xception(include_top=True, 
                                                 weights=None, 
                                                 input_tensor=None, 
@@ -410,13 +529,13 @@ xception.fit_generator(train_crops,
                     validation_data=val_crops,
                     validation_steps=STEP_SIZE_VALID,
                     workers=4)
-
+ """
 
 # In[ ]:
 
 
-from keras.applications.mobilenet import MobileNet
-mobile = MobileNet(input_shape=None, 
+""" from keras.applications.mobilenet import MobileNet
+sirovi_mobile = MobileNet(input_shape=None, 
                    alpha=1.0, 
                    depth_multiplier=1, 
                    dropout=1e-3, 
@@ -424,38 +543,92 @@ mobile = MobileNet(input_shape=None,
                    weights=None, 
                    input_tensor=None, 
                    pooling=None, 
-                   classes=57)
-mobile.compile(loss='categorical_crossentropy',
+                   classes=num_artists)
+
+sirovi_mobile.compile(loss='categorical_crossentropy',
                      optimizer=Adam(lr=1e-4),
                      metrics=['accuracy'])
-mobile.summary()
-mobile.fit_generator(train_crops,
+sirovi_mobile.summary()
+sirovi_mobile.fit_generator(train_crops,
                     steps_per_epoch=STEP_SIZE_TRAIN,
                     epochs=3,
                     validation_data=val_crops,
                     validation_steps=STEP_SIZE_VALID,
-                    workers=2)
+                    workers=4,
+                    callbacks=[tbCallBack, mdCheckPoint])
 
+sirovi_mobile.save_weights('sirovi_mobile50.h5')
 
-# In[ ]:
+evaluation_mobile = sirovi_mobile.evaluate_generator(test_crops,
+                         steps=test_generator.n//test_generator.batch_size,
+                         workers=4,
+                         verbose=1)
 
+print(sirovi_mobile.metrics_names)
+print(evaluation_mobile)
 
-from keras.applications.resnet50 import ResNet50
-resnet= ResNet50(include_top=True, 
-                 weights=None, 
-                 input_tensor=None, 
-                 input_shape=None, 
-                 pooling=None, 
-                 classes=57)
+predictions_mobile = sirovi_mobile.predict_generator(test_crops, 
+                                      steps=test_generator.n//test_generator.batch_size,
+                                      workers=4,
+                                      verbose=1)
 
-resnet.compile(loss='categorical_crossentropy',
+preds_mobile = np.argmax(predictions_mobile, axis=-1) #multiple categories
+
+label_map = (train_generator.class_indices)
+label_map = dict((v,k) for k,v in label_map.items()) #flip k,v
+preds_names = [label_map[k] for k in preds_mobile]
+
+print(sum(preds_mobile == test_generator.classes)/len(preds_mobile))
+
+# spremimo modelove "pogodtke"
+
+np.save(open('predictions_sirovi_mobile_test.npy', 'wb'), predictions_mobile) """
+
+""" from keras.applications.inception_v3 import InceptionV3
+
+sirovi_inv3 = InceptionV3(include_top=True,
+                            weights=None,
+                            input_tensor=None,
+                            input_shape=None,
+                            pooling=None,
+                            classes=num_artists)
+
+sirovi_inv3.compile(loss='categorical_crossentropy',
                      optimizer=Adam(lr=1e-4),
                      metrics=['accuracy'])
-resnet.summary()
-resnet.fit_generator(train_crops,
+sirovi_inv3.summary()
+print(len(sirovi_inv3.layers))
+sirovi_inv3.fit_generator(train_crops,
                     steps_per_epoch=STEP_SIZE_TRAIN,
                     epochs=3,
                     validation_data=val_crops,
                     validation_steps=STEP_SIZE_VALID,
-                    workers=2)
+                    workers=4,
+                    callbacks=[tbCallBack, mdCheckPoint])
 
+sirovi_inv3.save_weights('sirovi_inv3.h5')
+
+evaluation_inv3 = sirovi_inv3.evaluate_generator(test_crops,
+                         steps=test_generator.n//test_generator.batch_size,
+                         workers=4,
+                         verbose=1)
+
+print(sirovi_inv3.metrics_names)
+print(evaluation_inv3)
+
+predictions_inv3 = sirovi_inv3.predict_generator(test_crops, 
+                                      steps=test_generator.n//test_generator.batch_size,
+                                      workers=4,
+                                      verbose=1)
+
+preds_inv3 = np.argmax(predictions_inv3, axis=-1) #multiple categories
+
+label_map = (train_generator.class_indices)
+label_map = dict((v,k) for k,v in label_map.items()) #flip k,v
+preds_names = [label_map[k] for k in preds_inv3]
+
+print(sum(preds_inv3 == test_generator.classes)/len(preds_inv3))
+
+# spremimo modelove "pogodtke"
+
+np.save(open('predictions_sirovi_inv3_test.npy', 'wb'), predictions_inv3) """
