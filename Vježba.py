@@ -239,13 +239,13 @@ test_crops = crop_generator(test_generator, 224, False, True)
 #                activation='softmax',
 #                kernel_initializer=glorot_normal()))
 
-tbCallBack = TensorBoard(log_dir='./GraphTransfVgg16-3', 
+tbCallBack = TensorBoard(log_dir='./GraphSiroviVgg16-3', 
                          histogram_freq=1, 
                          write_graph=True, 
                          write_images=True,
                          write_grads=False)
 
-mdCheckPoint = ModelCheckpoint(filepath='transf-vgg16.weights.{epoch:02d}--{val_acc:.5f}.hdf5',
+mdCheckPoint = ModelCheckpoint(filepath='sirovi-vgg16.weights.{epoch:02d}--{val_acc:.5f}.hdf5',
                                 monitor='val_acc',
                                 mode='max',
                                 save_best_only=False,
@@ -420,7 +420,7 @@ my_vgg16.compile(loss='categorical_crossentropy',
 
 my_vgg16.summary()
 
-transfer_vgg16.fit_generator(train_crops,
+my_vgg16.fit_generator(train_crops,
                     steps_per_epoch=STEP_SIZE_TRAIN,
                     epochs=3,
                     validation_data=val_crops,
@@ -429,7 +429,7 @@ transfer_vgg16.fit_generator(train_crops,
 
 # spremimo model
 
-transfer_vgg16.save_weights('sirovi_vgg16_1-3.h5')
+my_vgg16.save_weights('sirovi_vgg16_1-3.h5')
 
 """ from keras.applications import vgg16
 vgg16 = vgg16.VGG16(include_top=False, weights='imagenet')
