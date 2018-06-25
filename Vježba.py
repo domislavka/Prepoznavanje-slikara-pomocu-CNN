@@ -14,8 +14,8 @@ warnings.simplefilter('ignore', Image.DecompressionBombWarning)
 environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 from keras.layers import Dense, Conv2D, BatchNormalization, Activation, MaxPooling2D
-from keras.layers import AveragePooling2D, Input, Flatten, Activation, Dropout, Dense
-from keras.optimizers import Adam
+from keras.layers import GlobalAveragePooling2D, AveragePooling2D, Input, Flatten, Activation, Dropout, Dense
+from keras.optimizers import Adam, SGD
 from keras.initializers import glorot_normal
 from keras.callbacks import ModelCheckpoint, LearningRateScheduler, TensorBoard
 from keras.callbacks import ReduceLROnPlateau
@@ -239,13 +239,13 @@ test_crops = crop_generator(test_generator, 224, False, True)
 #                activation='softmax',
 #                kernel_initializer=glorot_normal()))
 
-tbCallBack = TensorBoard(log_dir='./GraphVgg16-3', 
+tbCallBack = TensorBoard(log_dir='./GraphTransfVgg16-3', 
                          histogram_freq=1, 
                          write_graph=True, 
                          write_images=True,
                          write_grads=False)
 
-mdCheckPoint = ModelCheckpoint(filepath='vgg16.weights.{epoch:02d}--{val_acc:.5f}.hdf5',
+mdCheckPoint = ModelCheckpoint(filepath='transf-vgg16.weights.{epoch:02d}--{val_acc:.5f}.hdf5',
                                 monitor='val_acc',
                                 mode='max',
                                 save_best_only=False,
@@ -375,7 +375,7 @@ STEP_SIZE_VALID = validation_generator.n//validation_generator.batch_size
 """ print(confusion_matrix(test_generator.classes, preds))
 print(classification_report(test_generator.classes, preds)) """
 
-
+""" 
 # In[24]:
 
 
@@ -435,10 +435,9 @@ sirovi_vgg16.fit_generator(train_crops,
                     steps_per_epoch=STEP_SIZE_TRAIN,
                     epochs=3,
                     validation_data=val_crops,
-                    validation_steps=STEP_SIZE_VALID,
-                    workers = 4)
+                    validation_steps=STEP_SIZE_VALID)
 
-sirovi_vgg16.save_weights('sirovi_vgg16-13.h5')
+sirovi_vgg16.save_weights('sirovi_vgg16-13.h5') """
 
 """ for layer in sirovi_vgg16.layers[:10]:
     layer.trainable = False
@@ -459,7 +458,7 @@ sirovi_vgg16.fit_generator(train_crops,
 
 sirovi_vgg16.save_weights('sirovi_vgg16-13.h5') """
 
-evaluation_vgg16 = sirovi_vgg16.evaluate_generator(test_crops,
+""" evaluation_vgg16 = sirovi_vgg16.evaluate_generator(test_crops,
                          steps=test_generator.n//test_generator.batch_size,
                          workers=4,
                          verbose=1)
@@ -478,36 +477,40 @@ label_map = (train_generator.class_indices)
 label_map = dict((v,k) for k,v in label_map.items()) #flip k,v
 preds_names = [label_map[k] for k in preds_vgg16]
 
-print(sum(preds_vgg16 == test_generator.classes)/len(preds_vgg16))
+print(sum(preds_vgg16 == test_generator.classes)/len(preds_vgg16)) """
 
-# spremimo modelove "pogodtke"
 
-np.save(open('predictions_sirovi_vgg16_test.npy', 'wb'), predictions_vgg16)
+from keras.applications import vgg16
+vgg16 = vgg16.VGG16(include_top=False, weights='imagenet')
 
-""" from keras.applications import vgg16
-sirovi_vgg16 = vgg16.VGG16(
-                     input_tensor=None,
+x = vgg16.output
+x = Dense(128, activation='sigmoid')(x)
+x = GlobalAveragePooling2D()(x)
+x = Dropout(0.2)(x)
+preds_layer = Dense(num_artists, activation='softmax')(x)
 
-                     input_shape=None, 
-                     pooling=None, 
-                     classes=num_artists)
+transfer_vgg16 = Model(inputs=vgg16.input, outputs=preds_layer)
 
-sirovi_vgg16.compile(loss='categorical_crossentropy',
-                     optimizer=Adam(lr=1e-4),
+for layer in vgg16.layers:
+    layer.trainable = False
+
+transfer_vgg16.summary()
+
+transfer_vgg16.compile(loss='categorical_crossentropy',
+                     optimizer=SGD(lr=1e-3, momentum=0.9),
                      metrics=['accuracy'])
-sirovi_vgg16.summary() """
 
-
-# In[ ]:
-
-
-""" sirovi_vgg16.fit_generator(train_crops,
+transfer_vgg16.fit_generator(train_crops,
                     steps_per_epoch=STEP_SIZE_TRAIN,
                     epochs=3,
                     validation_data=val_crops,
                     validation_steps=STEP_SIZE_VALID,
-                    workers=2)
- """
+                    workers=4,
+                    callbacks=[tbCallBack, mdCheckPoint])
+
+# spremimo model
+
+transfer_vgg16.save_weights('transfer_vgg16_test.h5')
 
 # In[ ]:
 
