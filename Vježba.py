@@ -240,7 +240,6 @@ test_crops = crop_generator(test_generator, 224, False, True)
 #                kernel_initializer=glorot_normal()))
 
 tbCallBack = TensorBoard(log_dir='./GraphSiroviVgg16-3', 
-                         histogram_freq=1, 
                          write_graph=True, 
                          write_images=True,
                          write_grads=False)
@@ -408,14 +407,14 @@ x = MaxPooling2D((2, 2), strides=(2, 2), name='block5_pool')(x)
 base = Model(img_input, x)
 
 xx = base.output
-xx = Dense(128, activation='sigmoid', kernel_initializer=glorot_normal())(xx)
+xx = Dense(128, activation='relu', kernel_initializer=glorot_normal())(xx)
 xx = GlobalAveragePooling2D()(xx)
 preds_layer = Dense(num_artists, activation='softmax', kernel_initializer=glorot_normal())(xx)
 
 my_vgg16 = Model(inputs=base.input, outputs=preds_layer)
 
 my_vgg16.compile(loss='categorical_crossentropy',
-                     optimizer=SGD(lr=1e-3, momentum=0.9),
+                     optimizer=Adam(lr=1e-4),
                      metrics=['accuracy'])
 
 my_vgg16.summary()
@@ -425,10 +424,10 @@ my_vgg16.fit_generator(train_crops,
                     epochs=3,
                     validation_data=val_crops,
                     validation_steps=STEP_SIZE_VALID,
+                    workers=4,
                     callbacks=[tbCallBack, mdCheckPoint])
 
 # spremimo model
-
 my_vgg16.save_weights('sirovi_vgg16_1-3.h5')
 
 """ from keras.applications import vgg16
