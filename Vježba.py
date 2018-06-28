@@ -206,28 +206,6 @@ test_crops = crop_generator(test_generator, 224, False, True)
 
 # In[10]:
 
-<<<<<<< HEAD
-###
-###
-### Baseline mreža, insprirana glavnim člankom
-###
-###
-
-model = Sequential(name='baseline')
-
-model.add(Conv2D(32, kernel_size=3, strides=2, padding='same', input_shape=input_shape, kernel_initializer=glorot_normal()))
-model.add(Activation('relu'))
-model.add(BatchNormalization())
-model.add(MaxPooling2D(pool_size=2))
-model.add(Conv2D(32, kernel_size=3, strides=2, padding="same", input_shape=input_shape, kernel_initializer=glorot_normal()))
-model.add(Activation('relu'))
-model.add(BatchNormalization())
-model.add(MaxPooling2D(pool_size=2))
-model.add(Flatten())
-model.add(Dense(4*num_artists, input_shape=(6272,), kernel_initializer=glorot_normal()))
-model.add(Activation('relu'))
-model.add(Dense(num_artists, input_shape=(4*num_artists,), activation='softmax', kernel_initializer=glorot_normal()))
-=======
 
 # model mreže inspiriran glavnim člankom
 
@@ -273,21 +251,20 @@ mdCheckPoint = ModelCheckpoint(filepath='sirovi-vgg16.weights.{epoch:02d}--{val_
                                 save_weights_only=False,
                                 verbose=1,
                                 period=1)
->>>>>>> b98b5e49a4cfad71860f2bb176e5ceaed833c03d
 
 # koristimo adamov optimizator i metrika je točnost
-model.compile(loss='categorical_crossentropy',
-              optimizer=Adam(lr=1e-4),
-              metrics=['accuracy'])
+#model.compile(loss='categorical_crossentropy',
+#              optimizer=Adam(lr=1e-4),
+#              metrics=['accuracy'])
 
 # crta tablicu slojeva mreže
-model.summary()
+#model.summary()
 
 
 # In[11]:
 
 # mrežu smo već istrenirali i spremili njene težine
-model.load_weights('pokusaj300-20.h5')
+#model.load_weights('pokusaj300-20.h5')
 
 
 # In[ ]:
@@ -455,13 +432,8 @@ preds_layer = Dense(num_artists, activation='softmax', kernel_initializer=glorot
 
 sirovi_vgg16 = Model(inputs=base.input, outputs=preds_layer, name='scratchVGG16')
 
-<<<<<<< HEAD
-sirovi_vgg16.compile(loss='categorical_crossentropy',
-                     optimizer=SGD(lr=1e-3, momentum=0.9),
-=======
 my_vgg16.compile(loss='categorical_crossentropy',
                      optimizer=Adam(lr=1e-4),
->>>>>>> b98b5e49a4cfad71860f2bb176e5ceaed833c03d
                      metrics=['accuracy'])
 
 sirovi_vgg16.summary()
@@ -471,7 +443,6 @@ sirovi_vgg16.fit_generator(train_crops,
                     epochs=3,
                     validation_data=val_crops,
                     validation_steps=STEP_SIZE_VALID,
-<<<<<<< HEAD
                     callbacks=[
                         TensorBoard(log_dir='./GraphSiroviVGG16', 
                                     histogram_freq=1, 
@@ -484,11 +455,8 @@ sirovi_vgg16.fit_generator(train_crops,
                                     save_best_only=False,
                                     save_weights_only=False,
                                     verbose=1,
-                                    period=1)])
-=======
-                    workers=4,
-                    callbacks=[tbCallBack, mdCheckPoint])
->>>>>>> b98b5e49a4cfad71860f2bb176e5ceaed833c03d
+                                    period=1)],
+                    workers=4)
 
 # spremimo model
 my_vgg16.save_weights('sirovi_vgg16_1-3.h5')
@@ -543,8 +511,4 @@ transfer_vgg16.fit_generator(train_crops,
 
 # spremimo model
 
-<<<<<<< HEAD
 transfer_vgg16.save_weights('transfer_vgg16_test.h5')
-=======
-transfer_vgg16.save_weights('transfer_vgg16_test.h5') """
->>>>>>> b98b5e49a4cfad71860f2bb176e5ceaed833c03d
