@@ -1,4 +1,12 @@
 import numpy as np
+import pandas as pd
+
+def sve_jpg(df):
+    df = pd.read_csv(path.join(getcwd(), 'all_data_info.csv'))
+    for item in list(df.new_filename):
+        if not '.jpg' in item:
+            return False
+    return True
 
 def center_crop(img, center_crop_size):
     assert img.shape[2] == 3
@@ -16,7 +24,7 @@ def random_crop(img, random_crop_size):
     y = np.random.randint(0, height - dy + 1)
     return img[y:(y+dy), x:(x+dx), :]
 
-
+# https://jkjung-avt.github.io/keras-image-cropping/
 def crop_generator(batches, crop_length, random_cropping=True, test_batch=False):
     '''
     Take as input a Keras ImageGen (Iterator) and generate random

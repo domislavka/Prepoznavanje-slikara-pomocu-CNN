@@ -24,7 +24,7 @@ import random
 import numpy as np
 import shutil
 from time import time
-from imageAugumentation import *
+from VisualizeFilters import *
 
 filepathForWeights = 'transfer-vgg16-200-pretrained.h5'
 
@@ -147,18 +147,18 @@ def train_transferVGG16_200(train_generator, val_generator, num_artists):
 
 
 
-def test_transferVGG16_200(test_generator):
+def test_transferVGG16_200(test_generator, num_artists):
 
     """
     Funkcija za testiranje mreze Transfer_VGG16_200
     Na kraju se ispiše točnost, filteri mreže i saliency mape se spreme u datoteku
     """
 
-    base_model = VGG16.VGG16(include_top=False, weights=None)
+    base_model = VGG16(include_top=False, weights=None)
     x = base_model.output
     x = Dense(128)(x)
     x = GlobalAveragePooling2D()(x)
-    predictions = Dense(args["class"], activation='softmax')(x)
+    predictions = Dense(num_artists, activation='softmax')(x)
 
     model = Model(inputs=base_model.input, outputs=predictions)
 
@@ -174,4 +174,5 @@ def test_transferVGG16_200(test_generator):
     preds = np.argmax(predictions, axis=-1)
     print('Točnost: %f%' % (sum(preds == test_generator.classes)/len(preds))*100)
 
-    # jos tu pozovemo matricu konfuzije, filtere, saliency mapu
+
+test_transferVGG16_200(test_generator, test_generator.classes)

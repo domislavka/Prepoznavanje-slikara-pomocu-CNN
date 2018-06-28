@@ -1,4 +1,5 @@
 import numpy as np
+from time import time
 from keras import backend as K
 from keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_array, load_img, save_img
 
@@ -37,10 +38,7 @@ def layerFilters(model, layer_name, img_width, img_height, num_filters):
     filter_img = load_img('ImageForFilter.jpg')
 
     for filter_index in range(num_filters):
-        # we only scan through the first 200 filters,
-        # but there are actually 512 of them
         # print('Processing filter %d' % filter_index)
-        start_time = time.time()
 
         # we build a loss function that maximizes the activation
         # of the nth filter of the layer considered
@@ -80,8 +78,6 @@ def layerFilters(model, layer_name, img_width, img_height, num_filters):
         if loss_value > 0:
             img = deprocess_image(input_img_data[0])
             kept_filters.append((img, loss_value))
-        end_time = time.time()
-        # print('Filter %d processed in %ds' % (filter_index, end_time - start_time))
 
 
     # we will try to stitch the best 9 filters on a 3 x 3 grid.
@@ -109,3 +105,9 @@ def layerFilters(model, layer_name, img_width, img_height, num_filters):
     # save the result to disk
     save_img('stitched_filters_' + layer_name + '_%dx%d.png' % (n, n), stitched_filters)
     print('Filters saved to file ' + 'stitched_filters_' + layer_name + '_%dx%d.png' % (n, n))
+
+    # show image in window
+    stitched_filters.show()
+
+
+
