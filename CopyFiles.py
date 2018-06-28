@@ -9,9 +9,9 @@ def createFolder(name):
 
 moj_direktorij = getcwd()
 
-train_dir = path.join(path.abspath(path.join(moj_direktorij, '..')), 'train')
-validation_dir = path.join(path.abspath(path.join(moj_direktorij, '..')), 'validation')
-test_dir = path.join(path.abspath(path.join(moj_direktorij, '..')), 'test')
+train_dir = path.join(path.abspath(path.join(moj_direktorij, '..')), 'train200')
+validation_dir = path.join(path.abspath(path.join(moj_direktorij, '..')), 'validation200')
+test_dir = path.join(path.abspath(path.join(moj_direktorij, '..')), 'test200')
 
 train2_dir = path.join(path.abspath(path.join(moj_direktorij, '..')), 'images')
 
