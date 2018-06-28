@@ -39,12 +39,6 @@ print(df.shape)
 df.head()
 
 
-# In[4]:
-
-
-print('Sve su jpg: ' + str(sve_jpg(df)))
-
-
 # In[5]:
 
 

@@ -1,10 +1,7 @@
 import numpy as np
 import pandas as pd
-from os import getcwd, path
-
 
 def sve_jpg(df):
-    df = pd.read_csv(path.join(getcwd(), 'all_data_info.csv'))
     for item in list(df.new_filename):
         if not '.jpg' in item:
             return False

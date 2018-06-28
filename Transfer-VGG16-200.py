@@ -14,7 +14,7 @@ from keras.optimizers import Adam, SGD
 from keras.initializers import glorot_normal
 from keras.callbacks import ModelCheckpoint, LearningRateScheduler, TensorBoard
 from keras.callbacks import ReduceLROnPlateau
-from keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_array, load_img
+from keras.preprocessing.image import array_to_img, img_to_array, load_img
 from keras.regularizers import l2
 from keras import backend as K
 from keras.models import Sequential, Model
@@ -117,17 +117,17 @@ def finetune(train_generator, val_generator, num_artists):
                                 period=1)
 
     finetuned_vgg16_200.compile(loss="categorical_crossentropy",
-                                optimizer=optimizers.SGD(lr=0.0001, momentum=0.9),
+                                optimizer=SGD(lr=0.0001, momentum=0.9),
                                 metrics=["accuracy"])
 
     STEP_SIZE_TRAIN = train_generator.n/train_generator.batch_size
     STEP_SIZE_VALID = val_generator.n/val_generator.batch_size
 
-    finetuned_vgg16_200.fit_generator(train_crops,
+    finetuned_vgg16_200.fit_generator(train_generator,
                                     steps_per_epoch=STEP_SIZE_TRAIN,
                                     epochs=20,
                                     callbacks=[tensorboard, checkpoint],
-                                    validation_data = val_crops,
+                                    validation_data=val_generator,
                                     validation_steps=STEP_SIZE_VALID)
 
     # spremimo finetuned model
@@ -172,7 +172,7 @@ def test_transferVGG16_200(test_generator, num_artists):
                                     verbose=1)
 
     preds = np.argmax(predictions, axis=-1)
-    print('Točnost: %f%' % (sum(preds == test_generator.classes)/len(preds))*100)
+    print("Točnost: %f%" % (sum(preds == test_generator.classes)/len(preds))*100)
 
 
 test_transferVGG16_200(test_generator, test_generator.classes)
