@@ -29,17 +29,6 @@ import random
 import numpy as np
 import shutil
 
-
-# In[2]:
-
-
-def sve_jpg(df):
-    for item in list(df.new_filename):
-        if not '.jpg' in item:
-            return False
-    return True
-
-
 # In[3]:
 
 
