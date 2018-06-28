@@ -28,7 +28,7 @@ from imageAugumentation import *
 
 filepathForWeights = 'transfer-vgg16-200-pretrained.h5'
 
-def pretrain(train_generator, val_generator):
+def pretrain(train_generator, val_generator, num_artists):
     """
     Pretraining faza za mrežu Transfer_VGG16_200
     """
@@ -73,7 +73,7 @@ def pretrain(train_generator, val_generator):
     transfer_vgg16_200.fit_generator(train_generator, 
                                      steps_per_epoch=STEP_SIZE_TRAIN,
                                      epochs=20,
-                                     validation_data=val_generato,
+                                     validation_data=val_generator,
                                      validation_steps=STEP_SIZE_VALID,
                                      callbacks=[tensorboard, checkpoint])
 
@@ -82,7 +82,7 @@ def pretrain(train_generator, val_generator):
     transfer_vgg16_200.save('transfer_vgg16_test_200.h5')
 
 
-def finetune(train_generator, val_generator):
+def finetune(train_generator, val_generator, num_artists):
 
     """
     Funkcija za fine-tuning mreze Transfer_VGG16_200
@@ -136,7 +136,7 @@ def finetune(train_generator, val_generator):
 
 
 
-def train_transferVGG16_200(train_generator, val_generator):
+def train_transferVGG16_200(train_generator, val_generator, num_artists):
 
     """
     Funkcija za treniranje mreze Transfer_VGG16_200
