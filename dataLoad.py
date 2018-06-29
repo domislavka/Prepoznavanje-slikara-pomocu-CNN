@@ -1,7 +1,8 @@
+from keras.preprocessing.image import ImageDataGenerator
 import pandas as pd
 from os import path, getcwd
 from CopyFiles import *
-from keras.preprocessing.image import ImageDataGenerator
+from imageAugmentation import *
 
 df = pd.read_csv(path.join(getcwd(), 'all_data_info.csv'))
 seed = 123
@@ -87,8 +88,8 @@ def loadTest():
                     '../test',
                     batch_size=b_size,
                     class_mode=None, # this means our generator will only yield batches of data, no labels
-                    shuffle=False) # our data will be in order
-
+                    shuffle=False)   # our data will be in order
+    # na slikama iz test skupa radimo centralni crop
     test_crops = crop_generator(test_generator, 224, False, True)
 
     return [test_generator, test_crops]

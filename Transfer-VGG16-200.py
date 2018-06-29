@@ -8,27 +8,38 @@ warnings.simplefilter('ignore', Image.DecompressionBombWarning)
 environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 from keras.applications.vgg16 import VGG16
-from keras.layers import Dense, Conv2D, BatchNormalization, Activation, MaxPooling2D
-from keras.layers import GlobalAveragePooling2D, AveragePooling2D, Input, Flatten, Activation, Dropout, Dense
-from keras.optimizers import Adam, SGD
-from keras.initializers import glorot_normal
-from keras.callbacks import ModelCheckpoint, LearningRateScheduler, TensorBoard
-from keras.callbacks import ReduceLROnPlateau
-from keras.preprocessing.image import array_to_img, img_to_array, load_img
-from keras.regularizers import l2
-from keras import backend as K
-from keras.models import Sequential, Model
-from os import path, getcwd
-import pandas as pd
-import random
+from keras.layers import Dense, Activation, Dropout, GlobalAveragePooling2D
+from keras.optimizers import SGD
+from keras.callbacks import ModelCheckpoint, TensorBoard
+from keras.models import Model
+from sklearn.metrics import classification_report, confusion_matrix
 import numpy as np
 import shutil
-from time import time
 from VisualizeFilters import *
+from dataLoad import *
 
 filepathForWeights = 'transfer-vgg16-200-pretrained.h5'
 
-def pretrain(train_generator, val_generator, num_artists):
+trainData = loadTrain()
+train_generator = trainData[0]
+train_crops = trainData[1]
+
+valData = loadVal()
+validation_generator = valData[0]
+val_crops = valData[1]
+
+testData = loadTest()
+test_generator = testData[0]
+test_crops = testData[1]
+
+num_artists = train_generator.num_classes
+
+STEP_SIZE_TRAIN = train_generator.n/train_generator.batch_size
+STEP_SIZE_VALID = validation_generator.n/validation_generator.batch_size
+STEP_SIZE_TEST = test_generator.n//test_generator.batch_size
+
+
+def pretrain():
     """
     Pretraining faza za mrežu Transfer_VGG16_200
     """
@@ -51,29 +62,26 @@ def pretrain(train_generator, val_generator, num_artists):
     transfer_vgg16_200.summary()
 
     transfer_vgg16_200.compile(loss='categorical_crossentropy',
-                        optimizer=SGD(lr=1e-3, momentum=0.9),
-                        metrics=['accuracy'])
+                               optimizer=SGD(lr=1e-3, momentum=0.9),
+                               metrics=['accuracy'])
 
     tensorboard = TensorBoard(log_dir='./GraphTransferVgg16-200', 
-                         write_graph=True, 
-                         write_images=True,
-                         write_grads=False)
+                            write_graph=True, 
+                            write_images=True,
+                            write_grads=False)
 
     checkpoint = ModelCheckpoint(filepath=filepathForWeights,
-                                    monitor='val_acc',
-                                    mode='max',
-                                    save_best_only=True,
-                                    save_weights_only=False,
-                                    verbose=1,
-                                    period=1)
-
-    STEP_SIZE_TRAIN = train_generator.n/train_generator.batch_size
-    STEP_SIZE_VALID = val_generator.n/val_generator.batch_size
+                                monitor='val_acc',
+                                mode='max',
+                                save_best_only=True,
+                                save_weights_only=False,
+                                verbose=1,
+                                period=1)
     
-    transfer_vgg16_200.fit_generator(train_generator, 
+    transfer_vgg16_200.fit_generator(train_crops, 
                                      steps_per_epoch=STEP_SIZE_TRAIN,
                                      epochs=20,
-                                     validation_data=val_generator,
+                                     validation_data=val_crops,
                                      validation_steps=STEP_SIZE_VALID,
                                      callbacks=[tensorboard, checkpoint])
 
@@ -82,7 +90,7 @@ def pretrain(train_generator, val_generator, num_artists):
     transfer_vgg16_200.save('transfer_vgg16_test_200.h5')
 
 
-def finetune(train_generator, val_generator, num_artists):
+def finetune():
 
     """
     Funkcija za fine-tuning mreze Transfer_VGG16_200
@@ -120,14 +128,11 @@ def finetune(train_generator, val_generator, num_artists):
                                 optimizer=SGD(lr=0.0001, momentum=0.9),
                                 metrics=["accuracy"])
 
-    STEP_SIZE_TRAIN = train_generator.n/train_generator.batch_size
-    STEP_SIZE_VALID = val_generator.n/val_generator.batch_size
-
-    finetuned_vgg16_200.fit_generator(train_generator,
+    finetuned_vgg16_200.fit_generator(train_crops,
                                     steps_per_epoch=STEP_SIZE_TRAIN,
                                     epochs=20,
                                     callbacks=[tensorboard, checkpoint],
-                                    validation_data=val_generator,
+                                    validation_data=val_crops,
                                     validation_steps=STEP_SIZE_VALID)
 
     # spremimo finetuned model
@@ -136,22 +141,23 @@ def finetune(train_generator, val_generator, num_artists):
 
 
 
-def train_transferVGG16_200(train_generator, val_generator, num_artists):
+def train_transferVGG16_200():
 
     """
     Funkcija za treniranje mreze Transfer_VGG16_200
     """
 
-    pretrain(train_generator, val_generator)
-    finetune(train_generator, val_generator)
+    pretrain()
+    finetune()
 
 
 
-def test_transferVGG16_200(test_generator, num_artists):
+def test_transferVGG16_200():
 
     """
     Funkcija za testiranje mreze Transfer_VGG16_200
-    Na kraju se ispiše točnost, filteri mreže i saliency mape se spreme u datoteku
+    Na kraju se ispiše točnost
+    Vraća model mreze Transfer_VGG16_200
     """
 
     base_model = VGG16(include_top=False, weights=None)
@@ -164,15 +170,63 @@ def test_transferVGG16_200(test_generator, num_artists):
 
     model.load_weights("finetuned_transfer_vgg16_test_200_tezine.h5")
 
-    STEP_SIZE_TEST = test_generator.n//test_generator.batch_size
+    predictions = model.predict_generator(test_crops,
+                                        steps=STEP_SIZE_TEST,
+                                        workers=4,
+                                        verbose=1)
 
-    predictions = model.predict_generator(test_generator, 
-                                    steps=STEP_SIZE_TEST,
-                                    workers=4,
-                                    verbose=1)
+    np.save(open('predictions_transf_vgg16_300_test.npy', 'wb'), predictions)
 
     preds = np.argmax(predictions, axis=-1)
-    print("Točnost: %f%" % (sum(preds == test_generator.classes)/len(preds))*100)
+    print("Točnost: %f %" % (sum(preds == test_generator.classes)/len(preds))*100)
+
+    # treba malo proljepšati izgled matrica konfuzije
+
+    print(confusion_matrix(test_generator.classes, preds))
+    print(classification_report(test_generator.classes, preds))
+
+    return model
 
 
-test_transferVGG16_200(test_generator, test_generator.classes)
+model = test_transferVGG16_200()
+model.summary()
+
+# treba malo proljepšati izgled matrica konfuzije
+
+print(confusion_matrix(test_generator.classes, preds))
+print(classification_report(test_generator.classes, preds))
+
+# filteri layer-a spremamo u datoteku
+layer_name = 'neko_ime_layera'
+layer_index = neki_broj_layera
+
+img_width = 224
+img_height = 224
+
+num_filters = model.layers[layer_index].output.shape[3]
+
+layerFilters(model, layer_name, img_width, img_height, num_filters)
+
+# maksimizacija nekog autora kroz mrežu
+
+# SALIENCY MAP
+
+# PODMETNI UMJETNO DORAĐENU SLIKU
+
+'''
+OVO NAM SLUZI DA ZNAMO KAKO CEMO NA NAJBOLJOJ MREZI
+UCITAT UMJETNO DORADJENU SLIKU I NAPRAVIT PREDICT
+
+
+img = image.load_img("testPicasso.jpg")
+x = image.img_to_array(img)
+
+img_cropped = center_crop(x, (224, 224))
+img_cropped_blah = image.array_to_img(img_cropped)
+img_cropped_blah.show()
+
+x_pred = model.predict_classes(img_cropped.reshape(1, 224, 224, 3), batch_size=1)
+print('Sliku je naslikao: ', label_map[x_pred[0]])
+
+'''
+
