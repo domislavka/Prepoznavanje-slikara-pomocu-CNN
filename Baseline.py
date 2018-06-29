@@ -21,7 +21,8 @@ import pandas as pd
 import random
 import numpy as np
 import shutil
-
+import seaborn as sns
+import matplotlib.pyplot as plt
 from dataLoad import *
 
 trainData = loadTrain()
@@ -39,8 +40,12 @@ test_crops = testData[1]
 num_artists = train_generator.num_classes
 
 STEP_SIZE_TRAIN = train_generator.n/train_generator.batch_size
-STEP_SIZE_VALID = validation_generator.n/validation_generator.batch_size
-STEP_SIZE_TEST = test_generator.n//test_generator.batch_size
+
+# moramo staviti +1 jer 1710 nije djeljivo s 60
+STEP_SIZE_VALID = validation_generator.n/validation_generator.batch_size + 1
+
+# moramo staviti +1 jer 1710 nije djeljivo s 60
+STEP_SIZE_TEST = test_generator.n//test_generator.batch_size + 1
 
 # velicina slika koje dajemo ulaznom sloju mreze
 input_shape = (224, 224, 3)
@@ -123,18 +128,23 @@ def train(model, pretrained):
     model.save_weights('Baseline-weights.h5')
     return model
 
-def test(model):
+def test(model, loadSavedPreds = True):
 
     '''
     Funkcija za testiranje mreze Baseline
     '''
 
-    predictions = model.predict_generator(test_crops, 
-                                        steps=test_generator.n//test_generator.batch_size,
-                                        workers=4,
-                                        verbose=1)
+    if loadSavedPreds == True:
+        predictions = np.load('predictions_base_test.npy')
+    
+    else:
 
-    np.save(open('predictions_base_test.npy', 'wb'), predictions)
+        predictions = model.predict_generator(test_crops, 
+                                            steps=STEP_SIZE_TEST,
+                                            workers=4,
+                                            verbose=1)
+
+        np.save(open('predictions_base_test.npy', 'wb'), predictions)
 
     preds = np.argmax(predictions, axis=-1) # multiple categories
 
@@ -142,12 +152,23 @@ def test(model):
     label_map = dict((v,k) for k,v in label_map.items()) # flip k,v
     preds_names = [label_map[k] for k in preds]
 
-    print("Točnost: %f %" % (sum(preds == test_generator.classes)/len(preds))*100)
+    print("Točnost: " + str((sum(preds == test_generator.classes)/len(preds))*100) + " %")
 
-    # treba malo proljepšati izgled matrica konfuzije
 
-    print(confusion_matrix(test_generator.classes, preds))
-    print(classification_report(test_generator.classes, preds))
+    cm = confusion_matrix(test_generator.classes, preds))
+    report = classification_report(test_generator.classes, preds))
+
+    print("Scoreovi za pojedine autore:\n" + report)
+
+    df_cm = pd.DataFrame(cm)
+    plt.figure(figsize = (20,15))
+    sns.set(font_scale=1.9)#for label size
+
+    sns.set_style("darkgrid")
+
+    sns.heatmap(df_cm, annot=True, annot_kws={"size": 16})# font size
+    plt.show()
+    plt.savefig("baseline_matrica_konfuzije.jpg")
 
 
 model = initialize()

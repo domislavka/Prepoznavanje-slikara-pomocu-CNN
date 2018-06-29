@@ -40,8 +40,8 @@ test_crops = testData[1]
 num_artists = train_generator.num_classes
 
 STEP_SIZE_TRAIN = train_generator.n/train_generator.batch_size
-STEP_SIZE_VALID = validation_generator.n/validation_generator.batch_size
-STEP_SIZE_TEST = test_generator.n//test_generator.batch_size
+STEP_SIZE_VALID = validation_generator.n/validation_generator.batch_size + 1
+STEP_SIZE_TEST = test_generator.n//test_generator.batch_size + 1
 
 img_input = Input((224, 224, 3))
 
@@ -130,18 +130,24 @@ def train(model, pretrained):
     return model
 
 
-def test(model):
+def test(model, loadSavedPreds = True):
 
     '''
     Funkcija za testiranje mreze SiroviVGG16
     '''
 
-    predictions = model.predict_generator(test_crops, 
-                                        steps=test_generator.n//test_generator.batch_size,
-                                        workers=4,
-                                        verbose=1)
 
-    np.save(open('predictions_sirovivgg16_test.npy', 'wb'), predictions)
+    if loadSavedPreds == True:
+        predictions = np.load('predictions_base_test.npy')
+    
+    else:
+
+        predictions = model.predict_generator(test_crops, 
+                                            steps=STEP_SIZE_TEST,
+                                            workers=4,
+                                            verbose=1)
+
+        np.save(open('predictions_base_test.npy', 'wb'), predictions)
 
     preds = np.argmax(predictions, axis=-1) # multiple categories
 
@@ -149,12 +155,24 @@ def test(model):
     label_map = dict((v,k) for k,v in label_map.items()) # flip k,v
     preds_names = [label_map[k] for k in preds]
 
-    print("Točnost: %f %" % (sum(preds == test_generator.classes)/len(preds))*100)
+    print("Točnost: " + str((sum(preds == test_generator.classes)/len(preds))*100) + " %")
 
-    # treba malo proljepšati izgled matrica konfuzije
 
-    print(confusion_matrix(test_generator.classes, preds))
-    print(classification_report(test_generator.classes, preds))
+    cm = confusion_matrix(test_generator.classes, preds))
+    report = classification_report(test_generator.classes, preds))
+
+    print("Scoreovi za pojedine autore:\n" + report)
+
+    df_cm = pd.DataFrame(cm)
+    plt.figure(figsize = (20,15))
+    sns.set(font_scale=1.9)#for label size
+
+    sns.set_style("darkgrid")
+
+    sn.heatmap(df_cm, annot=True, annot_kws={"size": 16})# font size
+    plt.show()
+    plt.savefig("sirovi_vgg16_matrica_konfuzije.jpg")
+
 
 model = initialize()
 train(model, True)

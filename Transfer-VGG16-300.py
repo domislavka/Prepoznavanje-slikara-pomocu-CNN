@@ -7,6 +7,7 @@ Image.MAX_IMAGE_PIXELS = None
 warnings.simplefilter('ignore', Image.DecompressionBombWarning)
 environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
+from keras_preprocessing.image import save_img, load_img, img_to_array, array_to_img
 from keras.applications.vgg16 import VGG16
 from keras.layers import Dense, Activation, Dropout, GlobalAveragePooling2D
 from keras.optimizers import SGD
@@ -17,6 +18,9 @@ import numpy as np
 import shutil
 from VisualizeFilters import *
 from dataLoad import *
+from vis.visualization import visualize_activation, visualize_saliency
+from matplotlib import pyplot as plt
+from vis.input_modifiers import Jitter
 
 filepathForWeights = 'transfer-vgg16-300-pretrained.h5'
 
@@ -36,8 +40,8 @@ test_crops = testData[1]
 num_artists = train_generator.num_classes
 
 STEP_SIZE_TRAIN = train_generator.n/train_generator.batch_size
-STEP_SIZE_VALID = validation_generator.n/validation_generator.batch_size
-STEP_SIZE_TEST = test_generator.n//test_generator.batch_size
+STEP_SIZE_VALID = validation_generator.n/validation_generator.batch_size + 1
+STEP_SIZE_TEST = test_generator.n//test_generator.batch_size + 1
 
 def pretrain():
     """
@@ -150,7 +154,7 @@ def train_transferVGG16_300():
     finetune()
 
 
-def test_transferVGG16_300():
+def test_transferVGG16_300(loadSavedPreds = True):
 
     """
     Funkcija za testiranje mreze Transfer_VGG16_300
@@ -168,20 +172,42 @@ def test_transferVGG16_300():
 
     model.load_weights("finetuned_transfer_vgg16_test_300_tezine.h5")
 
-    predictions = model.predict_generator(test_crops,
-                                        steps=STEP_SIZE_TEST,
-                                        workers=4,
-                                        verbose=1)
+    if loadSavedPreds == True:
+        predictions = np.load('predictions_base_test.npy')
 
-    np.save(open('predictions_transf_vgg16_300_test.npy', 'wb'), predictions)
+    else:
+        predictions = model.predict_generator(test_crops,
+                                            steps=STEP_SIZE_TEST,
+                                            workers=4,
+                                            verbose=1)
 
-    preds = np.argmax(predictions, axis=-1)
-    print("Točnost: %f %" % (sum(preds == test_generator.classes)/len(preds))*100)
+        np.save(open('predictions_transf_vgg16_300_test.npy', 'wb'), predictions)
 
-    # treba malo proljepšati izgled matrica konfuzije
 
-    print(confusion_matrix(test_generator.classes, preds))
-    print(classification_report(test_generator.classes, preds))
+    preds = np.argmax(predictions, axis=-1) # multiple categories
+
+    label_map = (train_generator.class_indices)
+    label_map = dict((v,k) for k,v in label_map.items()) # flip k,v
+    preds_names = [label_map[k] for k in preds]
+
+    print("Točnost: " + str((sum(preds == test_generator.classes)/len(preds))*100) + " %")
+
+
+    cm = confusion_matrix(test_generator.classes, preds))
+    report = classification_report(test_generator.classes, preds))
+
+    print("Scoreovi za pojedine autore:\n" + report)
+
+    df_cm = pd.DataFrame(cm)
+    plt.figure(figsize = (20,15))
+    sns.set(font_scale=1.9)#for label size
+
+    sns.set_style("darkgrid")
+
+    sn.heatmap(df_cm, annot=True, annot_kws={"size": 16})# font size
+    plt.show()
+    plt.savefig("transfer_vgg16_300_matrica_konfuzije.jpg")
+
 
     return model
 
@@ -189,37 +215,115 @@ def test_transferVGG16_300():
 model = test_transferVGG16_300()
 model.summary()
 
-# filteri layer-a spremamo u datoteku
-layer_name = 'neko_ime_layera'
-layer_index = neki_broj_layera
 
-img_width = 224
-img_height = 224
+#########################################
+# maksimizacija nekog autora kroz mrežu #
+#########################################
 
-num_filters = model.layers[layer_index].output.shape[3]
+layer_idx = utils.find_layer_idx(model, 'predictions')
+model.layers[layer_idx].activation = activations.linear
+model = utils.apply_modifications(model)
 
-layerFilters(model, layer_name, img_width, img_height, num_filters)
+author_index = 20
 
-# maksimizacija nekog autora kroz mrežu
+plt.rcParams['figure.figsize'] = (18, 6)
 
-# SALIENCY MAP
+img = visualize_activation(model, 
+                            layer_idx, 
+                            filter_indices=author_index, 
+                            max_iter=500, 
+                            input_modifiers=[Jitter(16)])
+plt.imshow(img)
+save_img('transfer_vgg16_300_max_' + str(author_index) + '.png', img)
 
-# PODMETNI UMJETNO DORAĐENU SLIKU
+################################
+# maksimizacija za više autora #
+################################
 
-'''
-OVO NAM SLUZI DA ZNAMO KAKO CEMO NA NAJBOLJOJ MREZI
-UCITAT UMJETNO DORADJENU SLIKU I NAPRAVIT PREDICT
+authors = np.random.permutation(1000)[:15]
 
+vis_images = []
+image_modifiers = [Jitter(16)]
+for idx in categories:    
+    img = visualize_activation(model, 
+                                layer_idx, 
+                                filter_indices=idx, 
+                                max_iter=500, 
+                                input_modifiers=image_modifiers)
+    
+    # Reverse lookup index to imagenet label and overlay it on the image.
+    img = utils.draw_text(img, utils.get_imagenet_label(idx))
+    vis_images.append(img)
 
-img = image.load_img("testPicasso.jpg")
+# Generate stitched images with 5 cols (so it will have 3 rows).
+plt.rcParams['figure.figsize'] = (50, 50)
+stitched = utils.stitch_images(vis_images, cols=5)
+plt.axis('off')
+plt.imshow(stitched)
+plt.show()
+save_img('activation_max_transfer_300.png', stitches)
+
+########################
+# filteri conv slojeva #
+########################
+
+selected_indices = []
+for layer_name in ['block2_conv2', 'block3_conv3', 'block4_conv3', 'block5_conv3']:
+    layer_idx = utils.find_layer_idx(model, layer_name)
+
+    # Visualize all filters in this layer.
+    filters = np.random.permutation(get_num_filters(model.layers[layer_idx]))[:10]
+    selected_indices.append(filters)
+
+    # Generate input image for each filter.
+    vis_images = []
+    for idx in filters:
+        img = visualize_activation(model, layer_idx, filter_indices=idx)
+
+        # Utility to overlay text on image.
+        img = utils.draw_text(img, 'Filter {}'.format(idx))    
+        vis_images.append(img)
+
+    # Generate stitched image palette with 5 cols so we get 2 rows.
+    stitched = utils.stitch_images(vis_images, cols=5)    
+    plt.figure()
+    plt.axis('off')
+    plt.imshow(stitched)
+    plt.show()
+
+    save_img('transfer_vgg_300_' + layer_name + '.png', stitched)
+
+################
+# saliency map #
+################
+
+picasso = utils.load_img('/home/student1/ivsenki/Desktop/Vje-ba/testPicasso.jpg', target_size=(224, 224))
+
+layer_idx = utils.find_layer_idx(model, 'predictions')
+  
+# 20 is the index corresponding to picasso
+grad_picasso = visualize_saliency(transfer_vgg16, 
+                                   layer_idx, 
+                                   filter_indices=28,
+                                   seed_input=picasso)
+
+save_img('transfer_vgg16_200_saliency_picasso.png', grad_picasso)
+
+#############################################
+# testiraj mrežu na umjetno dorađenoj slici #
+#############################################
+
+imgFilePath = "golden_gate_matisse.png"
+# imgFilePath = "golden_gate_starry.png"
+# imgFilePath = "golden_gate_escher.png"
+
+img = image.load_img(imgFilePath)
 x = image.img_to_array(img)
 
 img_cropped = center_crop(x, (224, 224))
-img_cropped_blah = image.array_to_img(img_cropped)
-img_cropped_blah.show()
+img_cropped_array = image.array_to_img(img_cropped)
+img_cropped_array.show()
 
 x_pred = model.predict_classes(img_cropped.reshape(1, 224, 224, 3), batch_size=1)
 print('Sliku je naslikao: ', label_map[x_pred[0]])
-
-'''
 
