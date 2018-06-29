@@ -100,7 +100,7 @@ def finetune():
     Funkcija za fine-tuning mreze Transfer_VGG16_200
     """
 
-    base_model = VGG16(include_top=False, weights='None')
+    base_model = VGG16(include_top=False, weights=None)
 
     for layer in base_model.layers:
         layer.trainable = True
@@ -156,7 +156,7 @@ def train_transferVGG16_200():
 
 
 
-def test_transferVGG16_200(loadSavedPreds = True):
+def test_transferVGG16_200(loadSavedPreds=True):
 
     """
     Funkcija za testiranje mreze Transfer_VGG16_200
