@@ -18,7 +18,7 @@ import numpy as np
 import shutil
 from VisualizeFilters import *
 from dataLoad import *
-from vis.visualization import visualize_activation, visualize_saliency
+from vis.visualization import visualize_activation, visualize_saliency, get_num_filters
 from matplotlib import pyplot as plt
 from vis.input_modifiers import Jitter
 from top3_accuracy import *
