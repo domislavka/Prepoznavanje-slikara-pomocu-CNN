@@ -173,7 +173,7 @@ def test_transferVGG16_300(loadSavedPreds = True):
     model.load_weights("finetuned_transfer_vgg16_test_300_tezine.h5")
 
     if loadSavedPreds == True:
-        predictions = np.load('predictions_base_test.npy')
+        predictions = np.load('predictions_transf_vgg16_300_test.npy')
 
     else:
         predictions = model.predict_generator(test_crops,

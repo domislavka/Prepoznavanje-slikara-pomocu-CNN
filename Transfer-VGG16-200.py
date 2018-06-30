@@ -177,7 +177,7 @@ def test_transferVGG16_200(loadSavedPreds=True):
 
 
     if loadSavedPreds == True:
-        predictions = np.load('predictions_base_test.npy')
+        predictions = np.load('predictions_transf_vgg16_200_test.npy')
 
     else:
         predictions = model.predict_generator(test_crops,
@@ -185,7 +185,7 @@ def test_transferVGG16_200(loadSavedPreds=True):
                                             workers=4,
                                             verbose=1)
 
-        np.save(open('predictions_transf_vgg16_300_test.npy', 'wb'), predictions)
+        np.save(open('predictions_transf_vgg16_200_test.npy', 'wb'), predictions)
 
     preds = np.argmax(predictions, axis=-1) # multiple categories
 

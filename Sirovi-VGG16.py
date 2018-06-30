@@ -138,16 +138,15 @@ def test(model, loadSavedPreds = True):
 
 
     if loadSavedPreds == True:
-        predictions = np.load('predictions_base_test.npy')
+        predictions = np.load('predictions_siroviVGG16_test.npy')
     
     else:
 
         predictions = model.predict_generator(test_crops, 
                                             steps=STEP_SIZE_TEST,
-                                            workers=4,
                                             verbose=1)
 
-        np.save(open('predictions_base_test.npy', 'wb'), predictions)
+        np.save(open('predictions_siroviVGG16_test.npy', 'wb'), predictions)
 
     preds = np.argmax(predictions, axis=-1) # multiple categories
 
