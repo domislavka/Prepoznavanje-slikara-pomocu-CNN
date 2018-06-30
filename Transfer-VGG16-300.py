@@ -21,6 +21,7 @@ from dataLoad import *
 from vis.visualization import visualize_activation, visualize_saliency
 from matplotlib import pyplot as plt
 from vis.input_modifiers import Jitter
+from top3_accuracy import *
 
 filepathForWeights = 'transfer-vgg16-300-pretrained.h5'
 
@@ -192,6 +193,7 @@ def test_transferVGG16_300(loadSavedPreds = True):
 
     print("Točnost: " + str((sum(preds == test_generator.classes)/len(preds))*100) + " %")
 
+	top3_acc = top3_tocnost(predictions, test_generator)
 
     cm = confusion_matrix(test_generator.classes, preds))
     report = classification_report(test_generator.classes, preds))
@@ -307,7 +309,7 @@ grad_picasso = visualize_saliency(transfer_vgg16,
                                    filter_indices=28,
                                    seed_input=picasso)
 
-save_img('transfer_vgg16_200_saliency_picasso.png', grad_picasso)
+save_img('transfer_vgg16_300_saliency_picasso.png', grad_picasso)
 
 #############################################
 # testiraj mrežu na umjetno dorađenoj slici #

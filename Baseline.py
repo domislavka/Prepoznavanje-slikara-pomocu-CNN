@@ -24,6 +24,7 @@ import shutil
 import seaborn as sns
 import matplotlib.pyplot as plt
 from dataLoad import *
+from top3_accuracy import *
 
 trainData = loadTrain()
 train_generator = trainData[0]
@@ -154,6 +155,7 @@ def test(model, loadSavedPreds = True):
 
     print("Točnost: " + str((sum(preds == test_generator.classes)/len(preds))*100) + " %")
 
+	top3_acc = top3_tocnost(predictions, test_generator)
 
     cm = confusion_matrix(test_generator.classes, preds))
     report = classification_report(test_generator.classes, preds))

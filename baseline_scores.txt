@@ -60,4 +60,3 @@ Scoreovi za pojedine autore:
          56       0.39      0.60      0.47        30
 
 avg / total       0.39      0.38      0.37      1710
-
