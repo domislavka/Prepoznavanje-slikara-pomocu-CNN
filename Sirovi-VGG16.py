@@ -1,3 +1,4 @@
+
 from __future__ import print_function
 import warnings
 from os import environ
@@ -13,16 +14,22 @@ from keras.optimizers import Adam, SGD
 from keras.initializers import glorot_normal
 from keras.callbacks import ModelCheckpoint, LearningRateScheduler, TensorBoard
 from keras.callbacks import ReduceLROnPlateau
-from keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_array, load_img
+from keras_preprocessing.image import ImageDataGenerator, array_to_img, img_to_array, load_img
+from keras_preprocessing import image
 from keras.regularizers import l2
 from keras import backend as K
 from keras.models import Sequential, Model
 from os import path, getcwd
+import numpy as np
+from imageAugmentation import *
+
 import pandas as pd
 import random
-import numpy as np
-import shutil
 
+import shutil
+from sklearn.metrics import confusion_matrix, classification_report
+import seaborn as sns
+import matplotlib.pyplot as plt
 from dataLoad import *
 from top3_accuracy import *
 
@@ -38,7 +45,7 @@ testData = loadTest()
 test_generator = testData[0]
 test_crops = testData[1]
 
-num_artists = train_generator.num_classes
+num_artists = train_generator.classes
 
 STEP_SIZE_TRAIN = train_generator.n/train_generator.batch_size
 STEP_SIZE_VALID = validation_generator.n/validation_generator.batch_size + 1
@@ -87,11 +94,11 @@ def initialize():
 
     my_vgg16 = Model(inputs=base.input, outputs=preds_layer)
 
-    model.compile(loss='categorical_crossentropy',
+    my_vgg16.compile(loss='categorical_crossentropy',
                          optimizer=Adam(lr=1e-4),
                          metrics=['accuracy'])
 
-    model.summary()
+    my_vgg16.summary()
 
     return my_vgg16
 
@@ -137,7 +144,6 @@ def test(model, loadSavedPreds = True):
     Funkcija za testiranje mreze SiroviVGG16
     '''
 
-
     if loadSavedPreds == True:
         predictions = np.load('predictions_siroviVGG16_test.npy')
     
@@ -148,6 +154,24 @@ def test(model, loadSavedPreds = True):
                                             verbose=1)
 
         np.save(open('predictions_siroviVGG16_test.npy', 'wb'), predictions)
+    
+    #############################################
+    # testiraj mrežu na umjetno dorađenoj slici #
+    #############################################
+    
+    imgFilePath = "golden_gate_matisse.png"
+    #imgFilePath = "golden_gate_starry.png"
+    #imgFilePath = "golden_gate_escher.png"
+
+    img = image.load_img(imgFilePath)
+    x = image.img_to_array(img)
+
+    img_cropped = center_crop(x, (224, 224))
+    img_cropped_array = image.array_to_img(img_cropped)
+    img_cropped_array.show()
+
+    x_pred = model.predict(img_cropped.reshape(1, 224, 224, 3), batch_size=1)
+    print('Sliku je naslikao: ', np.argmax(x_pred[0]))
 
     preds = np.argmax(predictions, axis=-1) # multiple categories
 
@@ -157,10 +181,10 @@ def test(model, loadSavedPreds = True):
 
     print("Točnost: " + str((sum(preds == test_generator.classes)/len(preds))*100) + " %")
 
-	top3_acc = top3_tocnost(predictions, test_generator)
+    top3_acc = top3_tocnost(predictions, test_generator)
 
-    cm = confusion_matrix(test_generator.classes, preds))
-    report = classification_report(test_generator.classes, preds))
+    cm = confusion_matrix(test_generator.classes, preds)
+    report = classification_report(test_generator.classes, preds)
 
     print("Scoreovi za pojedine autore:\n" + report)
 
@@ -170,9 +194,10 @@ def test(model, loadSavedPreds = True):
 
     sns.set_style("darkgrid")
 
-    sn.heatmap(df_cm, annot=True, annot_kws={"size": 16})# font size
+    sns.heatmap(df_cm, annot=True, annot_kws={"size": 16})# font size
     plt.show()
     plt.savefig("sirovi_vgg16_matrica_konfuzije.jpg")
+
 
 
 model = initialize()

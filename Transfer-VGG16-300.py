@@ -7,7 +7,9 @@ Image.MAX_IMAGE_PIXELS = None
 warnings.simplefilter('ignore', Image.DecompressionBombWarning)
 environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
+import keras
 from keras_preprocessing.image import save_img, load_img, img_to_array, array_to_img
+from keras_preprocessing import image
 from keras.applications.vgg16 import VGG16
 from keras.layers import Dense, Activation, Dropout, GlobalAveragePooling2D
 from keras.optimizers import SGD
@@ -15,16 +17,18 @@ from keras.callbacks import ModelCheckpoint, TensorBoard
 from keras.models import Model
 from sklearn.metrics import classification_report, confusion_matrix
 import numpy as np
+from imageAugmentation import *
 import shutil
 from VisualizeFilters import *
 from dataLoad import *
-from vis.visualization import visualize_activation, visualize_saliency, get_num_filters
+from vis.visualization import visualize_activation, visualize_saliency
+import seaborn as sns
 from matplotlib import pyplot as plt
 from vis.input_modifiers import Jitter
+from vis.utils import utils
 from top3_accuracy import *
 
 filepathForWeights = 'transfer-vgg16-300-pretrained.h5'
-
 
 trainData = loadTrain()
 train_generator = trainData[0]
@@ -38,7 +42,7 @@ testData = loadTest()
 test_generator = testData[0]
 test_crops = testData[1]
 
-num_artists = train_generator.num_classes
+num_artists = train_generator.classes
 
 STEP_SIZE_TRAIN = train_generator.n/train_generator.batch_size
 STEP_SIZE_VALID = validation_generator.n/validation_generator.batch_size + 1
@@ -184,7 +188,6 @@ def test_transferVGG16_300(loadSavedPreds = True):
 
         np.save(open('predictions_transf_vgg16_300_test.npy', 'wb'), predictions)
 
-
     preds = np.argmax(predictions, axis=-1) # multiple categories
 
     label_map = (train_generator.class_indices)
@@ -193,10 +196,10 @@ def test_transferVGG16_300(loadSavedPreds = True):
 
     print("Točnost: " + str((sum(preds == test_generator.classes)/len(preds))*100) + " %")
 
-	top3_acc = top3_tocnost(predictions, test_generator)
+    top3_acc = top3_tocnost(predictions, test_generator)
 
-    cm = confusion_matrix(test_generator.classes, preds))
-    report = classification_report(test_generator.classes, preds))
+    cm = confusion_matrix(test_generator.classes, preds)
+    report = classification_report(test_generator.classes, preds)
 
     print("Scoreovi za pojedine autore:\n" + report)
 
@@ -206,16 +209,32 @@ def test_transferVGG16_300(loadSavedPreds = True):
 
     sns.set_style("darkgrid")
 
-    sn.heatmap(df_cm, annot=True, annot_kws={"size": 16})# font size
+    sns.heatmap(df_cm, annot=True, annot_kws={"size": 12})# font size
     plt.show()
     plt.savefig("transfer_vgg16_300_matrica_konfuzije.jpg")
 
-
     return model
-
 
 model = test_transferVGG16_300()
 model.summary()
+
+#############################################
+# testiraj mrežu na umjetno dorađenoj slici #
+#############################################
+
+#imgFilePath = "golden_gate_matisse.png"
+# imgFilePath = "golden_gate_starry.png"
+imgFilePath = "golden_gate_escher.png"
+
+img = image.load_img(imgFilePath)
+x = image.img_to_array(img)
+
+img_cropped = center_crop(x, (224, 224))
+img_cropped_array = image.array_to_img(img_cropped)
+img_cropped_array.show()
+
+x_pred = model.predict(img_cropped.reshape(1, 224, 224, 3), batch_size=1)
+print('Sliku je naslikao: ', np.argmax(x_pred[0]))
 
 
 #########################################
@@ -328,4 +347,3 @@ img_cropped_array.show()
 
 x_pred = model.predict_classes(img_cropped.reshape(1, 224, 224, 3), batch_size=1)
 print('Sliku je naslikao: ', label_map[x_pred[0]])
-
